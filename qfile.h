@@ -4,6 +4,7 @@
 
 #define BLOCK_SIZE (1024 * 1024 * 16)
 #define FILE_PATH_LEN 1024
+#define MODE_LEN 16
 
 unsigned int hash(const char *str);
 int hashIdx(const char* path, int fnCnt);
@@ -13,8 +14,8 @@ int dirCnt;
 int blockSize;
 
 typedef struct qfile {
-    const char* path;
-    const char* mode;
+    char path[FILE_PATH_LEN];
+    char mode[MODE_LEN];
     FILE** fhs;
     int fhCnt;
     fpos_t offset;
@@ -85,8 +86,8 @@ int quninit() {
 qfile* qfopen (const char* path, const char* mode) {
     qfile *qfh = (qfile*)malloc(sizeof(qfile));
     memset(qfh, 0, sizeof(qfile));
-    qfh->path = path;
-    qfh->mode = mode;
+    strcpy(qfh->path, path);
+    strcpy(qfh->mode, mode);
     qfh->fhCnt = dirCnt;
     qfh->startIdx = hashIdx(qfh->path, qfh->fhCnt);
 
@@ -245,7 +246,7 @@ int qfclose(qfile *qfh) {
         if (qfh->fhs[idx] != NULL) {
             int ret2 = fclose(qfh->fhs[idx]);
             if (i == 0) {
-                ret = ret;
+                ret = ret2;
             }
             qfh->fhs[idx] = NULL;
         }
