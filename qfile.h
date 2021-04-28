@@ -23,6 +23,8 @@ typedef struct qfile {
 
 int qinit(char** dirs_, int dirCnt_, int blockSize_);
 
+int quninit();
+
 qfile * qfopen(const char* path, const char* mode);
 
 size_t qfwrite (void* ptr, size_t size, size_t count, qfile *qfh);
@@ -30,6 +32,8 @@ size_t qfwrite (void* ptr, size_t size, size_t count, qfile *qfh);
 size_t qfread (void* ptr, size_t size, size_t count, qfile *qfh);
 
 int qfseek(qfile *qfh, long offset, int origin);
+
+int qftell(qfile* qfh);
 
 int qfclose(qfile *qfh);
 
@@ -221,24 +225,6 @@ int qfseek(qfile *qfh, long offset, int whence) {
     return 0;
 }
 
-int qfclose(qfile *qfh) {
-    int startIdx = qfh->startIdx;
-    for (int i = 0; i < qfh->fhCnt; i+=1) {
-        int idx = (startIdx+i)%qfh->fhCnt;
-        if (qfh->fhs[idx] != NULL) {
-            int ret = fclose(qfh->fhs[idx]);
-            if (ret != 0) {
-                return ret;
-            }
-            qfh->fhs[idx] = NULL;
-        }
-    }
-    free(qfh->fhs);
-    qfh->fhs = NULL;
-    free(qfh);
-    return 0;
-}
-
 int qftell(qfile* qfh) {
     int size = 0;
     int startIdx = qfh->startIdx;
@@ -249,6 +235,25 @@ int qftell(qfile* qfh) {
         }
     }
     return size;
+}
+
+int qfclose(qfile *qfh) {
+    int startIdx = qfh->startIdx;
+    int ret = 0;
+    for (int i = 0; i < qfh->fhCnt; i+=1) {
+        int idx = (startIdx+i)%qfh->fhCnt;
+        if (qfh->fhs[idx] != NULL) {
+            int ret2 = fclose(qfh->fhs[idx]);
+            if (i == 0) {
+                ret = ret;
+            }
+            qfh->fhs[idx] = NULL;
+        }
+    }
+    free(qfh->fhs);
+    qfh->fhs = NULL;
+    free(qfh);
+    return ret;
 }
 
 int qremove(const char *path) {    
